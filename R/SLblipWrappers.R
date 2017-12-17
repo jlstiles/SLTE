@@ -1,3 +1,5 @@
+#' @title SL.xgbB
+#' @description boosting for interactions
 #' @export
 SL.xgbB = function (Y, X, newX, family, obsWeights, id, ntrees = 1000, 
                     max_depth = 2, shrinkage = 0.01, minobspernode = 10, params = list(), 
@@ -47,9 +49,6 @@ SL.xgbB = function (Y, X, newX, family, obsWeights, id, ntrees = 1000,
   return(out)
 }
 
-environment(SL.xgbB) <- asNamespace("SuperLearner")
-
-
 #' @export
 SL.blip = function (Y, X, newX, family, obsWeights, model = TRUE, ...) 
 {
@@ -89,4 +88,3 @@ SL.blip = function (Y, X, newX, family, obsWeights, model = TRUE, ...)
   return(out)
 }
 
-environment(SL.blip) <- asNamespace("SuperLearner")
