@@ -1,0 +1,208 @@
+\documentclass{article}\usepackage[]{graphicx}\usepackage[]{color}
+%% maxwidth is the original width if it is less than linewidth
+%% otherwise use linewidth (to make sure the graphics do not exceed the margin)
+
+\usepackage{amsmath,amsfonts,amssymb,amsthm,epsfig,epstopdf,titling,url,array}
+
+\usepackage{setspace}
+\doublespacing
+\theoremstyle{plain}
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{prop}[thm]{Proposition}
+\newtheorem*{cor}{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{defn}{Definition}[section]
+\newtheorem{conj}{Conjecture}[section]
+\newtheorem{exmp}{Example}[section]
+
+\theoremstyle{remark}
+\newtheorem*{rem}{Remark}
+\newtheorem*{note}{Note}
+\makeatletter
+\def\maxwidth{ %
+  \ifdim\Gin@nat@width>\linewidth
+    \linewidth
+  \else
+    \Gin@nat@width
+  \fi
+}
+\makeatother
+\usepackage{csquotes}
+\definecolor{fgcolor}{rgb}{0.345, 0.345, 0.345}
+
+\usepackage{framed}
+
+
+\definecolor{shadecolor}{rgb}{.97, .97, .97}
+\definecolor{messagecolor}{rgb}{0, 0, 0}
+\definecolor{warningcolor}{rgb}{1, 0, 1}
+\definecolor{errorcolor}{rgb}{1, 0, 0}
+
+\usepackage{alltt}
+\usepackage{enumitem}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{biblatex}
+\usepackage[letterpaper, portrait, margin=1in]{geometry}
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{float}
+%\usepackage[showframe]{geometry}
+\usepackage{caption}
+\def\changemargin#1#2{\list{}{\rightmargin#2\leftmargin#1}\item[]}
+\let\endchangemargin=\endlist
+\setlength{\parindent}{0pt}
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+We begin by defining the estimator of $\bar{Q}(A, W)$, as fitting $\bar{Q}(0, W)$ and then estimating $\bar{Q}(A, W)$ as $offset(\bar{Q}(0,W)) + A\B(W)$.  $B(W)$, the blip, is then obtained respecting the loss for $\bar{Q}$ but punishing the blip to find effect modification better in finite samples.  Asymptotically it is sound as well. Candidate estimators for $\bar{Q}$ are fits of $\bar{Q}(0,W)$ coupled with a superlearner fit based on the offset. \\
+
+Case 1: logistic regression
+<<>>==
+library(Simulations)
+source("~/Dropbox/Jonathan/Simulations/WrappersVblip1.R")
+Q0_linear.int = function (A, W1, W2, W3, W4) 
+{
+  plogis(.13*(2* A + 2*A * W1 + 4*A*W3 + W2 + W4 + 10*A*W4))
+}
+
+g0 = g0_linear
+Q0 = Q0_linear.int
+
+truth = get.truth(g0 = g0, Q0 = Q0)
+truth
+
+n=1000
+data = gendata(n, g0, Q0)
+X = data
+X$Y = NULL
+Y = data$Y
+X1 = X0 = X
+X1$A = 1
+X0$A = 0
+newX = rbind(X,X1,X0)
+
+SL.blip = function (Y, X, newX, family, obsWeights, model = TRUE, ...) 
+{
+  if (is.matrix(X)) {
+    X = as.data.frame(X)
+  }
+  
+  Wnames = names(X)[2:ncol(X)]
+  Q0kform =  paste(Wnames, "", collapse = "+")
+  
+  X0 = X1 = X
+  X0$A = 0
+  X1$A = 1
+  Y0 = Y[X$A == 0]
+  # fit and predict Q0k
+  Q0kfit = glm(formula(paste0("Y0~", Q0kform)), family = binomial, data = X[X$A == 0,Wnames])
+  Q0k = predict(Q0kfit, newdata = X0[,2:ncol(X)], type = 'response')
+  
+  # keeping Bk regression functional form the same as for Q0k here
+  Bkform = Q0kform
+  
+  # fit the model
+  X$Q0k = Q0k
+  Qkfit = glm(formula(paste0("Y~ A + A:(", Bkform, ")", "+ offset(qlogis(Q0k)) - 1")), 
+              family = binomial, data = X)
+  
+  #get the predictions for the new method and blip, Bk
+  newdata = newX
+  newdata$Q0k = predict(Q0kfit, newdata = newX, type = 'response')
+  pred = predict(Qkfit, newdata = newdata, type = 'response')
+  # pred[1:1000+2000] - Q0k
+  # pred = plogis(qlogis(predict(Qkfit, newdata = newdata, type = 'response')) - (1 - newX$A)*adj)
+  
+  fit <- list(object = Qkfit)
+  class(fit) <- "SL.glm"
+  out <- list(pred = pred, fit = fit)
+  return(out)
+}
+
+environment(SL.blip) <- asNamespace("SuperLearner")
+
+n=1000
+data = gendata(n, g0, Q0)
+X = data
+X$Y = NULL
+X1 = X0 = X
+X1$A = 1
+X0$A = 0
+Y = data$Y
+newX = rbind(X, X1, X0)
+
+test_SL.blip = SL.blip(Y, X, newX, family = 'binomial', obsWeights = NULL, model = TRUE)
+
+test = SuperLearner(Y, X, newX = newX, SL.library = c("SL.blip", "glm.mainint"), 
+                    family = binomial(), method = "method.NNloglik")
+
+
+test$coef 
+test$cvRisk
+test$library.predict
+sim_loss = function(n, g0, Q0) {
+  
+  # n=50
+  # generatethe data
+  data = gendata(n, g0, Q0)
+
+  # Compute the true blip on the data
+  data0 = data1 = data
+  data0$A = 0
+  data1$A = 1
+  B0 = with(data1, Q0(A, W1, W2, W3, W4)) - with(data0, Q0(A, W1, W2, W3, W4))
+  Qtrue = with(data, Q0(A, W1, W2, W3, W4))
+  
+  X = data
+  X$Y = NULL
+  X1 = X0 = X
+  X1$A = 1
+  X0$A = 0
+  Y = data$Y
+  newX = rbind(X, X1, X0)
+  
+  res = SuperLearner(Y, X, newX = newX, SL.library = c("SL.blip", "glm.mainint"), 
+                    family = binomial(), method = "method.NNloglik")
+  
+  
+  blip_glm = res$library.predict[n+1:n,2] - res$library.predict[2*n+1:n,2]
+  blip_2stage = res$library.predict[n+1:n,1] - res$library.predict[2*n+1:n,1]
+  
+  loss_blip_glm = mean((B0 - blip_glm)^2)
+  loss_blip_2stage = mean((B0 - blip_2stage)^2)
+  
+  ate_glm = mean(blip_glm)
+  var_glm = var(blip_glm)
+  
+  ate_2stage = mean(blip_2stage)
+  var_2stage = var(blip_2stage)
+  
+  return(c(loss_blip_glm = loss_blip_glm, loss_blip_2stage = loss_blip_2stage, 
+           risks = res$cvRisk, coef = res$coef, ate_glm = ate_glm, ate_2stage = ate_2stage, 
+           var_glm = var_glm, var_2stage = var_2stage))
+}
+
+detectCores()
+cl = makeCluster(detectCores(), type = "SOCK")
+cl_export =c("Q0_linear.int", "SL.blip", "glm.mainint")
+clusterExport(cl,cl_export)
+registerDoSNOW(cl)
+
+n = 10000
+B = 1
+
+ALL=foreach(i=1:B,.packages=c("gentmle2","mvtnorm","hal","Simulations","SuperLearner")) %dopar%
+            {sim_loss(n, g0 = g0, Q0 = Q0)}
+
+results = data.matrix(data.frame(do.call(rbind, ALL)))
+colMeans(results)
+
+@
+
+
+\end{document}
