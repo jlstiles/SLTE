@@ -49,8 +49,10 @@ SL.xgbB = function (Y, X, newX, family, obsWeights, id, ntrees = 1000,
   return(out)
 }
 
+#' @title SL.blipLR
+#' @description boosting for interactions
 #' @export
-SL.blip = function (Y, X, newX, family, obsWeights, model = TRUE, ...) 
+SL.blipLR = function (Y, X, newX, family, obsWeights, model = TRUE, ...) 
 {
   if (is.matrix(X)) {
     X = as.data.frame(X)
