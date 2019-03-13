@@ -1,5 +1,5 @@
 #' @title SL.xgbTE
-#' @description boosting for interactions
+#' @description boosting for interactions for use with SuperLearner
 #' @export
 SL.xgbTE = function (Y, X, newX, family, obsWeights, id, ntrees = 1000, 
                     max_depth = 2, shrinkage = 0.01, minobspernode = 10, params = list(), 
