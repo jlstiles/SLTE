@@ -1,4 +1,4 @@
-Package: SLblip
+Package: TEfitter
 Type: Package
 Title: What the Package Does (Title Case)
 Version: 0.1.0
@@ -10,28 +10,45 @@ License: What license is it under?
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.0.1
-Depends: knitr,
-    reshape,
-    reshape2,
-    ggplot2,
-    xtable,
-    ltmle,
-    SuperLearner,
-    gridExtra,
-    foreach,
-    doSNOW,
-    parallel,
-    mvtnorm,
-    nnet,
-    caret,
-    e1071,
-    gam,
-    rpart,
-    randomForest,
-    gentmle2,
+Depends:
     origami,
-    stargazer,
+    SuperLearner,
+    xgboost
+Suggests:
+    testthat,
+    knitr,
+    rmarkdown,
+    glmnet,
+    devtools,
+    dplyr,
+    drat,
+    rgl,
+    condensier,
+    cvAUC,
+    forecast,
+    nloptr,
+    rugarch,
+    nnls,
+    tsDyn,
+    Rsolnp,
+    xgboost,
+    speedglm,
+    randomForest,
+    SuperLearner,
+    h2o,
+    future,
+    e1071,
+    earth,
+    R.rsp,
+    kerasR,
+    keras,
+    reticulate,
+    MASS,
+    arm,
     hal,
-    combinat,
-    matrixStats
-
+    rJava,
+    bartMachine,
+    hal9001,
+    devel
+Remotes:
+    github::jlstiles/Simulations

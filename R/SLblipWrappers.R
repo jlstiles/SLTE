@@ -1,13 +1,13 @@
-#' @title SL.xgbB
+#' @title SL.xgbTE
 #' @description boosting for interactions
 #' @export
-SL.xgbB = function (Y, X, newX, family, obsWeights, id, ntrees = 1000, 
+SL.xgbTE = function (Y, X, newX, family, obsWeights, id, ntrees = 1000, 
                     max_depth = 2, shrinkage = 0.01, minobspernode = 10, params = list(), 
                     nthread = 1, verbose = 0, save_period = NULL, ...) 
 {
   # get number of cols and treatment col logical
   p = ncol(X)
-  txcol = 1:p==grep("A", colnames(X))
+  txcol = unlist(lapply(colnames(X), FUN = function(x) x=="A"))
   
   # convert to matrices for xgboost
   X = as.matrix(X)
@@ -49,16 +49,17 @@ SL.xgbB = function (Y, X, newX, family, obsWeights, id, ntrees = 1000,
   return(out)
 }
 
-#' @title SL.blipLR
-#' @description boosting for interactions
+#' @title SL.lrTE
+#' @description does main terms for outcome fit on A = 0.  Uses this fit as offset in TE fitter
 #' @export
-SL.blipLR = function (Y, X, newX, family, obsWeights, model = TRUE, ...) 
+SL.lrTE = function (Y, X, newX, family, obsWeights, model = TRUE, ...) 
 {
   if (is.matrix(X)) {
     X = as.data.frame(X)
   }
   
-  Wnames = names(X)[2:ncol(X)]
+  txcol = unlist(lapply(colnames(X), FUN = function(x) x=="A"))
+  Wnames = colnames(X)[!txcol]
   Q0kform =  paste(Wnames, "", collapse = "+")
   
   X0 = X1 = X
