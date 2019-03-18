@@ -9,5 +9,5 @@ SL.xgbTE(Y, X, newX, family, obsWeights, id, ntrees = 1000, max_depth = 2,
   verbose = 0, save_period = NULL, ...)
 }
 \description{
-boosting for interactions
+boosting for interactions for use with SuperLearner
 }
